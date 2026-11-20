@@ -38,6 +38,11 @@ $env:POSTGRES_PORT = "5432"
 $env:DJANGO_SECRET_KEY = "replace-with-a-long-random-secret"
 ```
 
+For a hosted PostgreSQL service such as Supabase, set `DATABASE_URL` in the backend's
+server-side environment variables. Keep it out of frontend variables and source control.
+When using `DATABASE_URL`, SSL is required by default; `POSTGRES_SSLMODE` can override
+that default if the provider specifies another mode.
+
 Apply migrations, create the initial Superadmin interactively, then start the API:
 
 ```powershell
@@ -45,6 +50,15 @@ python manage.py migrate
 python manage.py create_superadmin
 python manage.py runserver
 ```
+
+## Render API deployment
+
+The root `render.yaml` can create the Django API service from this repository. Add the
+rotated Supabase PostgreSQL connection URL as the `DATABASE_URL` secret when Render asks
+for it. The service runs migrations on startup to create the schema; it does not copy
+records from the local SQLite database. After deployment, set `VITE_API_URL` in the
+Hostinger frontend's build environment to the Render API URL and rebuild the frontend.
+Never put `DATABASE_URL` in the frontend environment.
 
 The API runs at `http://localhost:8000`. JWT login is at `POST /api/auth/token/`; the authenticated profile is at `GET /api/auth/me/`. The dashboard is at `GET /api/dashboard/`, and user listing/creation is at `/api/users/` for Superadmin and Head roles. Authenticated users can manage customers, products, inventory movements, sales, purchases, and expenses through `/api/customers/`, `/api/products/`, `/api/inventory-movements/`, `/api/sales/`, `/api/purchases/`, and `/api/expenses/`. `POST /api/checkout/` creates a sale with product lines and deducts filled stock atomically. Checkout lines may include `empty_returned` to record returned cylinders; those are added to the product's separate empty-cylinder count without changing the sale price. Inventory movements can adjust filled or empty stock and reject removals beyond the available count.
 
