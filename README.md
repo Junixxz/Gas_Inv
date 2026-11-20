@@ -53,15 +53,16 @@ python manage.py runserver
 
 ## Render API deployment
 
-The root `render.yaml` can create the Django API service from this repository. Add the
-rotated Supabase PostgreSQL **Session Pooler** URI as the `DATABASE_URL` secret when
-Render asks for it. Supabase's direct connection is IPv6-only by default; the shared
-Session Pooler is IPv4-compatible and intended for persistent backends. Avoid the
-Transaction Pooler for this long-running Django service. The service runs migrations on
-startup to create the schema; it does not copy records from the local SQLite database.
-After deployment, set `VITE_API_URL` in the Hostinger frontend's build environment to
-the Render API URL and rebuild the frontend. Never put `DATABASE_URL` in the frontend
-environment.
+The root `render.yaml` creates the Django API service. In Render, set `DATABASE_URL`
+to the Supabase PostgreSQL **Session Pooler** connection URL as a secret. The direct
+Supabase connection may require IPv6 support; the Session Pooler is the recommended
+choice for this persistent API service. Do not put database credentials in frontend
+variables.
+
+The API runs migrations at startup to create its schema; this does not copy data from
+the local SQLite database. After deployment, set `VITE_API_URL` in the Hostinger
+frontend's build environment to the Render API URL and rebuild the frontend. Then create
+the initial Superadmin from the Render shell with `python manage.py create_superadmin`.
 
 The API runs at `http://localhost:8000`. JWT login is at `POST /api/auth/token/`; the authenticated profile is at `GET /api/auth/me/`. The dashboard is at `GET /api/dashboard/`, and user listing/creation is at `/api/users/` for Superadmin and Head roles. Authenticated users can manage customers, products, inventory movements, sales, purchases, and expenses through `/api/customers/`, `/api/products/`, `/api/inventory-movements/`, `/api/sales/`, `/api/purchases/`, and `/api/expenses/`. `POST /api/checkout/` creates a sale with product lines and deducts filled stock atomically. Checkout lines may include `empty_returned` to record returned cylinders; those are added to the product's separate empty-cylinder count without changing the sale price. Inventory movements can adjust filled or empty stock and reject removals beyond the available count.
 
